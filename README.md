@@ -24,7 +24,7 @@
      ```
 
   3. **Deploy to GitHub Pages**  
-     In `vite.config.ts` the default base path is `philo-app`. If your new repo has a **different name**, either change that default or deploy with:
+     In `vite.config.ts` the default base path is `ROI-Visual`. If you use a different repo name, either change that default or deploy with:
      ```bash
      BASE_PATH=your-repo-name npm run deploy
      ```
