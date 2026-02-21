@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 
 // GitHub Pages serves from https://<user>.github.io/<repo>/
 // Set BASE_PATH to your repo name (with no leading/trailing slash) for deployment
-const BASE_PATH = process.env.BASE_PATH || 'philo-app';
+const BASE_PATH = process.env.BASE_PATH || 'ROI-Visual';
 const base = process.env.NODE_ENV === 'production' ? `/${BASE_PATH}/` : '/';
 
 export default defineConfig({
