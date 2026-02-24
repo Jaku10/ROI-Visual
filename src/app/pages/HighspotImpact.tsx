@@ -100,9 +100,9 @@ export function HighspotImpact() {
             <Sparkles className="w-8 h-8" />
           </div>
           <div>
-            <h2 className="text-xl font-bold mb-1">Highspot Implementation Impact</h2>
+            <h2 className="text-xl font-bold mb-1">Highspot implementation impact</h2>
             <p className="text-emerald-100 text-sm max-w-2xl">
-              Impact assumptions are based on typical B2B sales enablement outcomes. Adjust baseline KPIs to model your scenario; results reflect net of platform investment.
+              Impact assumptions align with enterprise B2B sales enablement outcomes. Set baseline KPIs to model your business scenario; results are net of platform investment.
             </p>
           </div>
         </div>
@@ -114,28 +114,28 @@ export function HighspotImpact() {
         <ImpactCard
           title="Revenue lift"
           value={formatCurrency(revenueLift)}
-          subtext="With Highspot vs baseline"
+          subtext="With Highspot vs. baseline"
           positive
           icon={<DollarSign className="w-5 h-5" />}
         />
         <ImpactCard
-          title="ROI change"
+          title="ROI improvement"
           value={`+${roiLift.toFixed(1)}%`}
           subtext="Net of platform investment"
           positive
           icon={<TrendingUp className="w-5 h-5" />}
         />
         <ImpactCard
-          title="Faster cycle"
+          title="Cycle reduction"
           value={`−${cycleImprovement} days`}
-          subtext="Avg sales cycle"
+          subtext="Avg. sales cycle"
           positive
           icon={<Clock className="w-5 h-5" />}
         />
         <ImpactCard
           title="Win rate"
           value={`${data.winRate}% → ${highspotWinRate}%`}
-          subtext="Baseline → With Highspot"
+          subtext="Baseline → with Highspot"
           positive
           icon={<Target className="w-5 h-5" />}
         />
@@ -150,7 +150,7 @@ export function HighspotImpact() {
               Baseline KPIs (current state)
             </h2>
             <p className="text-sm text-slate-500 mb-6">
-              Set your current metrics. The right side shows comparison with Highspot.
+              Enter your current sales and pipeline metrics. The comparison view shows impact with Highspot.
             </p>
             <div className="space-y-6">
               <KPICard
@@ -160,7 +160,7 @@ export function HighspotImpact() {
                 max={60}
                 unit="%"
                 onChange={(val) => setData((prev) => ({ ...prev, winRate: val }))}
-                description="Current % of qualified opportunities that close won."
+                description="Current share of qualified opportunities that close won."
                 color="blue"
               />
               <KPICard
@@ -181,7 +181,7 @@ export function HighspotImpact() {
                 max={500000}
                 step={500}
                 onChange={(val) => setData((prev) => ({ ...prev, opptys: val }))}
-                description="Total qualified opportunities in pipeline per year."
+                description="Total qualified pipeline opportunities per year."
                 color="green"
               />
               <KPICard
@@ -215,10 +215,10 @@ export function HighspotImpact() {
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
               <Zap className="w-5 h-5 text-amber-500" />
-              Before vs After Highspot
+              Before vs. after Highspot
             </h3>
             <p className="text-sm text-slate-500 mb-6">
-              Key metrics: baseline (current) vs with Highspot implementation.
+              Key business metrics: baseline (current) vs. with Highspot implementation.
             </p>
             <div className="h-[280px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -264,9 +264,9 @@ export function HighspotImpact() {
 
           {/* Revenue & profit comparison */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-            <h3 className="text-lg font-bold text-slate-800 mb-2">Revenue & Profit Comparison</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Revenue & profit comparison</h3>
             <p className="text-sm text-slate-500 mb-6">
-              Projected revenue and net profit: baseline vs with Highspot (after platform cost).
+              Projected revenue and net profit: baseline vs. with Highspot (net of platform cost).
             </p>
             <div className="h-[260px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -316,12 +316,12 @@ export function HighspotImpact() {
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <h3 className="text-lg font-bold text-slate-800 mb-1">Impact assumptions</h3>
             <p className="text-xs text-slate-500 mb-4">
-              Conservative estimates aligned with typical B2B sales enablement impact (e.g. win rate +3–6 pts, cycle −10–15%, pipeline visibility +5%). Actual results vary by deployment and adoption.
+              Conservative estimates aligned with enterprise B2B sales enablement research (e.g. win rate +3–6 pts, cycle −10–15%, pipeline visibility +5%). Actual results vary by deployment and adoption.
             </p>
             <ul className="text-sm text-slate-600 space-y-2 mb-6">
               <li className="flex items-center gap-2">
                 <ArrowRight className="w-4 h-4 text-emerald-500" />
-                Win rate: +{HIGHSPOT_ASSUMPTIONS.winRateLift} pts (aligned content, coaching, and rep enablement)
+                Win rate: +{HIGHSPOT_ASSUMPTIONS.winRateLift} pts (aligned content, coaching, rep enablement)
               </li>
               <li className="flex items-center gap-2">
                 <ArrowRight className="w-4 h-4 text-emerald-500" />

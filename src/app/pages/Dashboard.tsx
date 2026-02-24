@@ -67,7 +67,7 @@ export function Dashboard() {
           onClick={resetData}
           className="text-sm text-blue-600 font-medium hover:text-blue-800 transition-colors"
         >
-          Reset to Default
+          Reset to default scenario
         </button>
       </div>
 
@@ -79,29 +79,29 @@ export function Dashboard() {
             title="Projected Revenue" 
             value={formatCurrency(projectedRevenue)} 
             icon={<DollarSign className="w-5 h-5 text-emerald-600" />}
-            trend="From pipeline × win rate"
+            trend="Pipeline value × win rate"
             trendUp={true}
             color="emerald"
           />
           <SummaryCard 
-            title="Est. ROI" 
+            title="Estimated ROI" 
             value={`${roi.toFixed(1)}%`} 
             icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
-            trend="Based on Rep Cost"
+            trend="Return on sales investment"
             color="blue"
           />
           <SummaryCard 
-            title="Revenue Per Rep" 
+            title="Revenue per rep" 
             value={formatCurrency(revenuePerRep)} 
             icon={<Users className="w-5 h-5 text-indigo-600" />}
-            trend={`${dealsPerRep.toFixed(1)} Deals/Rep`}
+            trend={`${dealsPerRep.toFixed(1)} closed deals per rep`}
             color="indigo"
           />
           <SummaryCard 
-            title="Pipeline Velocity" 
+            title="Pipeline velocity" 
             value={`$${formatNumber(totalPipelineValue / (data.cycle / 30))} / mo`} 
             icon={<Clock className="w-5 h-5 text-amber-600" />}
-            trend={`${data.cycle} Days Avg Cycle`}
+            trend={`${data.cycle} days avg. sales cycle`}
             color="amber"
           />
         </div>
@@ -116,7 +116,7 @@ export function Dashboard() {
                 KPI Inputs
               </h2>
               <p className="text-sm text-slate-500 mb-6">
-                Adjust the drivers below to see how changes impact the bottom line.
+                Adjust sales and pipeline drivers to see impact on revenue and ROI.
               </p>
               
               <div className="space-y-6">
@@ -127,8 +127,8 @@ export function Dashboard() {
                   max={60}
                   unit="%"
                   onChange={(val) => setData(prev => ({ ...prev, winRate: val }))}
-                  description="Percentage of qualified opportunities that close won."
-                  commentary="Enterprise B2B benchmarks often sit in the 25–40% range by segment."
+                  description="Share of qualified opportunities that close won."
+                  commentary="Enterprise B2B benchmarks typically 25–40% by segment."
                   color="blue"
                 />
 
@@ -140,8 +140,8 @@ export function Dashboard() {
                   step={10000}
                   prefix="$"
                   onChange={(val) => setData(prev => ({ ...prev, dealSize: val }))}
-                  description="Average contract value per closed deal."
-                  commentary="Varies by segment (e.g. mid-market vs strategic/enterprise)."
+                  description="Average contract value (ACV) per closed deal."
+                  commentary="Varies by segment (mid-market vs strategic/enterprise)."
                   color="indigo"
                 />
 
@@ -152,8 +152,8 @@ export function Dashboard() {
                   max={500000}
                   step={500}
                   onChange={(val) => setData(prev => ({ ...prev, opptys: val }))}
-                  description="Total qualified opportunities in the pipeline per year."
-                  commentary="Driven by coverage model, TAM, and conversion from lead to opportunity."
+                  description="Total qualified opportunities in pipeline per year."
+                  commentary="Driven by coverage model, addressable market, and lead-to-opportunity conversion."
                   color="green"
                 />
 
@@ -164,8 +164,8 @@ export function Dashboard() {
                   max={10000}
                   step={50}
                   onChange={(val) => setData(prev => ({ ...prev, reps: val }))}
-                  description="Quota-carrying account executives and sales roles."
-                  commentary="Fully loaded headcount (OTE + benefits, ramp, management)."
+                  description="Quota-carrying sales headcount (AEs and sales roles)."
+                  commentary="Fully loaded: OTE, benefits, ramp, and management allocation."
                   color="amber"
                 />
 
@@ -177,7 +177,7 @@ export function Dashboard() {
                   step={5}
                   unit=" Days"
                   onChange={(val) => setData(prev => ({ ...prev, cycle: val }))}
-                  description="Average days from opportunity creation to closed won."
+                  description="Average days from opportunity creation to closed-won."
                   commentary="Enterprise deals often 90–200 days; varies by deal size and complexity."
                   color="slate"
                 />
@@ -192,11 +192,11 @@ export function Dashboard() {
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
               <div className="flex justify-between items-center mb-6">
                  <div>
-                    <h3 className="text-lg font-bold text-slate-800">Revenue Sensitivity</h3>
-                    <p className="text-sm text-slate-500">Impact of win rate changes on total revenue</p>
+                    <h3 className="text-lg font-bold text-slate-800">Revenue sensitivity</h3>
+                    <p className="text-sm text-slate-500">Impact of win rate on projected revenue</p>
                  </div>
                  <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold uppercase rounded-full">
-                    Live Projection
+                    Live projection
                  </div>
               </div>
               
@@ -222,8 +222,8 @@ export function Dashboard() {
                         if (active && payload && payload.length) {
                           return (
                             <div className="bg-slate-800 text-white text-xs p-2 rounded shadow-lg">
-                              <p className="font-bold mb-1">{payload[0].payload.name} Win Rate</p>
-                              <p>Revenue: {formatCurrency(payload[0].value as number)}</p>
+                              <p className="font-bold mb-1">Win rate {payload[0].payload.name}</p>
+                              <p>Projected revenue: {formatCurrency(payload[0].value as number)}</p>
                             </div>
                           );
                         }
@@ -239,45 +239,45 @@ export function Dashboard() {
                 </ResponsiveContainer>
               </div>
               <div className="mt-4 text-center text-xs text-slate-400">
-                Current Win Rate: <strong>{data.winRate}%</strong> vs Sensitivity Range
+                Current win rate: <strong>{data.winRate}%</strong> vs sensitivity range
               </div>
             </div>
 
             {/* Pipeline Funnel Visual */}
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-               <h3 className="text-lg font-bold text-slate-800 mb-6">Pipeline Flow</h3>
+               <h3 className="text-lg font-bold text-slate-800 mb-6">Pipeline flow</h3>
                <div className="space-y-4">
                   <FunnelStage 
-                    label="Total Pipeline Value" 
+                    label="Total pipeline value" 
                     value={totalPipelineValue} 
                     color="bg-slate-200" 
                     textColor="text-slate-600"
                     width="100%"
-                    subtext={`${formatNumber(data.opptys)} Opportunities`}
+                    subtext={`${formatNumber(data.opptys)} qualified opportunities`}
                   />
                   
                   {/* Intermediate inferred stage for visual effect */}
                   <div className="flex justify-center"><ArrowRight className="w-5 h-5 text-slate-300 rotate-90 my-1" /></div>
                   
                   <FunnelStage 
-                    label="Projected Revenue (Won)" 
+                    label="Projected revenue (closed-won)" 
                     value={projectedRevenue} 
                     color="bg-emerald-100" 
                     barColor="bg-emerald-500"
                     textColor="text-emerald-900"
                     width={`${data.winRate}%`}
-                    subtext={`${data.winRate}% Win Rate`}
+                    subtext={`${data.winRate}% win rate`}
                   />
                </div>
 
                <div className="mt-8 grid grid-cols-2 gap-4">
                   <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                    <div className="text-xs text-slate-500 uppercase font-semibold mb-1">Deal Velocity</div>
-                    <div className="text-2xl font-bold text-slate-800">{data.cycle} Days</div>
-                    <div className="text-xs text-slate-400 mt-1">Avg time to close</div>
+                    <div className="text-xs text-slate-500 uppercase font-semibold mb-1">Deal velocity</div>
+                    <div className="text-2xl font-bold text-slate-800">{data.cycle} days</div>
+                    <div className="text-xs text-slate-400 mt-1">Avg. time to close</div>
                   </div>
                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                    <div className="text-xs text-slate-500 uppercase font-semibold mb-1">Avg Deal Size</div>
+                    <div className="text-xs text-slate-500 uppercase font-semibold mb-1">Avg. deal size (ASP)</div>
                     <div className="text-2xl font-bold text-slate-800">{formatCurrency(data.dealSize)}</div>
                     <div className="text-xs text-slate-400 mt-1">Per closed opportunity</div>
                   </div>
@@ -288,10 +288,10 @@ export function Dashboard() {
             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-lg p-6 text-white">
                <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-xl font-bold mb-2">ROI Summary</h3>
+                    <h3 className="text-xl font-bold mb-2">ROI summary</h3>
                     <p className="text-blue-100 text-sm max-w-md">
-                       At <strong>{formatCurrency(data.costPerRep)}</strong> fully loaded cost per rep (OTE + benefits, ramp, overhead), 
-                       the sales organization shows a <strong>{roi.toFixed(0)}%</strong> return on investment from projected revenue.
+                       At <strong>{formatCurrency(data.costPerRep)}</strong> fully loaded cost per rep (OTE, benefits, ramp, overhead), 
+                       the sales organization delivers <strong>{roi.toFixed(0)}%</strong> return on sales investment from projected revenue.
                     </p>
                   </div>
                   <div className="text-right">

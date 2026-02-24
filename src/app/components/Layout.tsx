@@ -18,8 +18,8 @@ export function Layout() {
               <Calculator className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-slate-900 leading-tight">ROI & KPI Modeler</h1>
-              <p className="text-xs text-slate-500">Interactive Enterprise Analysis</p>
+              <h1 className="text-lg font-bold text-slate-900 leading-tight">Enterprise ROI & KPI Modeler</h1>
+              <p className="text-xs text-slate-500">Sales Economics & Business Impact</p>
             </div>
           </Link>
 
@@ -32,7 +32,7 @@ export function Layout() {
               )}
             >
               <Home className="w-4 h-4" />
-              Input
+              ROI Input
             </Link>
             <Link
               to="/general"

@@ -4,13 +4,13 @@ import { FileText, Check, Calculator, Sparkles } from 'lucide-react';
 import { useKPIData } from '../context/KPIDataContext';
 
 const kpiLabels: Record<string, string> = {
-  companyName: 'Company',
-  winRate: 'Win rate',
+  companyName: 'Company / scenario',
+  winRate: 'Win rate (%)',
   dealSize: 'Avg deal size (ASP)',
-  opptys: 'Annual piped opptys',
-  reps: 'Sales reps',
-  cycle: 'Sales cycle',
-  costPerRep: 'Cost per rep',
+  opptys: 'Annual pipeline opportunities',
+  reps: 'Sales headcount',
+  cycle: 'Sales cycle (days)',
+  costPerRep: 'Fully loaded cost per rep',
 };
 
 export function Landing() {
@@ -27,26 +27,26 @@ export function Landing() {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-12">
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">ROI & KPI Modeler</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Enterprise ROI & KPI Modeler</h1>
         <p className="text-slate-600">
-          Paste your ROI and KPI estimates from Gemini below, then explore the General Model and Highspot Impact visuals.
+          Model your business case with sales economics from your ROI document. Paste enterprise KPIs below, then explore revenue impact and ROI visuals.
         </p>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
         <div className="flex items-center gap-2 mb-2">
           <FileText className="w-5 h-5 text-slate-500" />
-          <h2 className="text-lg font-bold text-slate-800">Input your ROI & KPI results</h2>
+          <h2 className="text-lg font-bold text-slate-800">Enterprise ROI & KPI inputs</h2>
         </div>
         <p className="text-sm text-slate-500 mb-4">
-          Paste the full document from Gemini (e.g. one-page ROI model with the KPI table). We’ll parse Win Rate, Deal Size (ASP), Annual Piped Opptys, Sales Reps, Sales Cycle, and company name.
+          Paste your business ROI document (e.g. one-page ROI model or KPI summary from Gemini). We parse win rate, average deal size (ASP), annual pipeline opportunities, sales headcount, sales cycle, fully loaded cost per rep, and company or scenario name.
         </p>
         <textarea
           value={pasteValue}
           onChange={(e) => { setPasteValue(e.target.value); setAppliedFields(null); }}
-          placeholder="Paste your Gemini ROI / KPI document here…"
+          placeholder="Paste your enterprise ROI / KPI document here…"
           className="w-full h-48 px-4 py-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
-          aria-label="Paste ROI and KPI results from Gemini"
+          aria-label="Paste enterprise ROI and KPI results"
         />
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
@@ -79,7 +79,7 @@ export function Landing() {
           </div>
           <div>
             <h3 className="font-bold text-slate-900">General Model</h3>
-            <p className="text-sm text-slate-500 mt-0.5">Company-wide ROI & KPI visuals</p>
+            <p className="text-sm text-slate-500 mt-0.5">Enterprise sales economics: pipeline value, revenue, and ROI</p>
           </div>
         </Link>
         <Link
@@ -91,7 +91,7 @@ export function Landing() {
           </div>
           <div>
             <h3 className="font-bold text-slate-900">Highspot Impact</h3>
-            <p className="text-sm text-slate-500 mt-0.5">Before/after impact on KPIs & ROI</p>
+            <p className="text-sm text-slate-500 mt-0.5">Business impact: before/after KPIs and ROI</p>
           </div>
         </Link>
       </div>

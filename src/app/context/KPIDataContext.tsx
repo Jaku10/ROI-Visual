@@ -10,9 +10,9 @@ export interface KPIData {
   costPerRep: number;
 }
 
-// Realistic enterprise defaults (B2B / strategic sales; fully loaded cost per rep)
+// Enterprise / B2B defaults: strategic sales, fully loaded cost per rep (OTE, benefits, ramp)
 const INITIAL_DATA: KPIData = {
-  companyName: 'Enterprise Sales',
+  companyName: 'Enterprise scenario',
   winRate: 32,
   dealSize: 350000,
   opptys: 15000,
@@ -25,92 +25,181 @@ function parseNumber(str: string): number {
   return parseInt(String(str).replace(/,/g, ''), 10) || 0;
 }
 
-/** Parse pasted ROI/KPI document text and return any recognized fields */
+function parseDecimal(str: string): number {
+  const cleaned = String(str).replace(/,/g, '').trim();
+  const n = parseFloat(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
+// Sanity bounds so parsed values stay reasonable in the visualization
+const BOUNDS = {
+  winRate: { min: 1, max: 100 },
+  dealSize: { min: 1000, max: 50_000_000 },
+  opptys: { min: 100, max: 10_000_000 },
+  reps: { min: 1, max: 100_000 },
+  cycle: { min: 7, max: 730 },
+  costPerRep: { min: 50_000, max: 500_000 },
+} as const;
+
+function clamp<T extends keyof typeof BOUNDS>(key: T, value: number): number {
+  const { min, max } = BOUNDS[key];
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+/** Parse pasted ROI/KPI document text and return any recognized fields. Handles Gemini-style docs (tables, bullets, "Label: value" lines). */
 export function parseResultsFromText(text: string): Partial<KPIData> {
   const out: Partial<KPIData> = {};
-  const lower = text.toLowerCase();
 
-  // ----- One-page doc format: table rows like | **Win Rate** | **~42%** | -----
-  // Win rate: "**Win Rate** | **~42%**" or "win rate: 35", "35%"
-  const winMatch =
-    text.match(/\|\s*\*?\*?Win Rate\*?\*?\s*\|\s*[^|]*?~?(\d+)\s*%?/i) ??
-    text.match(/(?:win\s*rate|winrate)[:\s]*(\d+)|(\d+)\s*%\s*(?:win|rate)/i) ??
-    lower.match(/(\d+)\s*%\s*win/);
-  if (winMatch) {
-    const n = parseNumber(winMatch[1] || winMatch[2] || '');
-    if (n >= 0 && n <= 100) out.winRate = n;
+  // ----- Win Rate: table, "Win rate: 42%", "42% win rate", "~42%", decimals, bullets -----
+  const winPatterns = [
+    /\|\s*\*?\*?Win\s*Rate\*?\*?\s*\|\s*[^|]*?~?(\d+(?:\.\d+)?)\s*%?/i,
+    /(?:^|\n)\s*[-*•]\s*(?:win\s*rate|winrate)[:\s\-]+(\d+(?:\.\d+)?)\s*%?/im,
+    /(?:win\s*rate|winrate)[:\s\-]+(\d+(?:\.\d+)?)\s*%?/i,
+    /(?:win\s*rate|winrate)[:\s\-]+(\d+(?:\.\d+)?)/i,
+    /(\d+(?:\.\d+)?)\s*%\s*(?:win\s*rate|win\s*rate)/i,
+    /(\d+(?:\.\d+)?)\s*%\s*win/i,
+    /win\s*rate\s*(?:is\s*)?(?:at\s*)?(?:~?)?(\d+(?:\.\d+)?)\s*%?/i,
+    /\*\*Win\s*Rate\*\*[:\s]*~?(\d+(?:\.\d+)?)\s*%?/i,
+  ];
+  for (const re of winPatterns) {
+    const m = text.match(re);
+    if (m) {
+      const n = parseDecimal(m[1]);
+      if (n >= 0 && n <= 100) {
+        out.winRate = clamp('winRate', n);
+        break;
+      }
+    }
   }
 
-  // Average Deal Size (ASP): "**$1.2M**", "**$450,000**", "$250k" in table or body
-  const dealTableM = text.match(/\|\s*\*?\*?Average Deal Size \(ASP\)\*?\*?\s*\|\s*[^|]*?\$?(\d+(?:\.\d+)?)\s*M/i);
-  const dealTableNum = text.match(/\|\s*\*?\*?Average Deal Size \(ASP\)\*?\*?\s*\|\s*[^|]*?\$?([\d,]+)(?!\s*M)/i);
-  const dealBodyM = text.match(/\$?(\d+(?:\.\d+)?)\s*M\b/i);
-  const dealBodyK = text.match(/(?:deal\s*size|asp)[:\s]*\$?([\d,]+)\s*k|\$([\d,]+)\s*k\b/i);
-  const dealBodyNum = text.match(/(?:deal\s*size|asp|average\s*deal)[:\s]*\$?([\d,]+)(?!\s*[kM])/i);
-  if (dealTableM) {
-    const n = parseFloat(dealTableM[1]) * 1e6;
-    if (n > 0) out.dealSize = Math.round(n);
-  } else if (dealTableNum) {
-    const n = parseNumber(dealTableNum[1]);
-    if (n > 0) out.dealSize = n;
-  } else if (dealBodyM) {
-    const n = parseFloat(dealBodyM[1]) * 1e6;
-    if (n > 0) out.dealSize = Math.round(n);
-  } else if (dealBodyK) {
-    let n = parseNumber(dealBodyK[1] || dealBodyK[2] || '');
-    if (n > 0 && n < 100000) out.dealSize = n * 1000;
-    else if (n > 0) out.dealSize = n;
-  } else if (dealBodyNum) {
-    const n = parseNumber(dealBodyNum[1]);
-    if (n > 0) out.dealSize = n;
+  // ----- Deal Size (ASP): table, $1.2M, $450k, "Average deal size: 350000", "deal size: $1.2M" -----
+  const dealPatterns: { re: RegExp; scale: number }[] = [
+    { re: /\|\s*\*?\*?Average\s*Deal\s*Size\s*\(ASP\)\*?\*?\s*\|\s*[^|]*?\$?(\d+(?:\.\d+)?)\s*M/i, scale: 1e6 },
+    { re: /\|\s*\*?\*?Average\s*Deal\s*Size\*?\*?\s*\|\s*[^|]*?\$?(\d+(?:\.\d+)?)\s*M/i, scale: 1e6 },
+    { re: /\|\s*\*?\*?Deal\s*Size\*?\*?\s*\|\s*[^|]*?\$?([\d,]+(?:\.\d+)?)\s*M/i, scale: 1e6 },
+    { re: /\|\s*\*?\*?Average\s*Deal\s*Size\s*\(ASP\)\*?\*?\s*\|\s*[^|]*?\$?([\d,]+)(?!\s*M)/i, scale: 1 },
+    { re: /(?:^|\n)\s*[-*•]\s*(?:average\s*)?deal\s*size[:\s\-]+\$?(\d+(?:\.\d+)?)\s*M/im, scale: 1e6 },
+    { re: /(?:average\s*)?deal\s*size\s*(?:\(asp\))?[:\s\-]+\$?(\d+(?:\.\d+)?)\s*M/i, scale: 1e6 },
+    { re: /(?:average\s*)?deal\s*size\s*(?:\(asp\))?[:\s\-]+\$?([\d,]+)\s*k/i, scale: 1000 },
+    { re: /(?:average\s*)?deal\s*size\s*(?:\(asp\))?[:\s\-]+\$?([\d,]+)/i, scale: 1 },
+    { re: /asp[:\s\-]+\$?(\d+(?:\.\d+)?)\s*M/i, scale: 1e6 },
+    { re: /asp[:\s\-]+\$?([\d,]+)\s*k/i, scale: 1000 },
+    { re: /\*\*Average\s*Deal\s*Size\*\*[:\s]*\$?(\d+(?:\.\d+)?)\s*M/i, scale: 1e6 },
+    { re: /\$(\d+(?:\.\d+)?)\s*M\b/, scale: 1e6 },
+    { re: /\$([\d,]+)\s*k\b/i, scale: 1000 },
+  ];
+  for (const { re, scale } of dealPatterns) {
+    const m = text.match(re);
+    if (m) {
+      const raw = parseDecimal(m[1]);
+      const n = raw * scale;
+      if (n > 0) {
+        out.dealSize = clamp('dealSize', n);
+        break;
+      }
+    }
   }
 
-  // Annual Piped Opptys: "**~12,000**" in table
-  const oppMatch =
-    text.match(/\|\s*\*?\*?Annual Piped Opptys?\*?\*?\s*\|\s*[^|]*?~?([\d,]+)/i) ??
-    text.match(/(?:opportunit(?:y|ies)|pipeline|opptys?)[:\s]*([\d,]+)|([\d,]+)\s*opportunit/i);
-  if (oppMatch) {
-    const n = parseNumber(oppMatch[1] || oppMatch[2] || '');
-    if (n > 0) out.opptys = n;
+  // ----- Annual Piped Opptys / opportunities -----
+  const oppPatterns = [
+    /\|\s*\*?\*?Annual\s*Piped\s*Opptys?\*?\*?\s*\|\s*[^|]*?~?([\d,]+)/i,
+    /\|\s*\*?\*?Pipeline\s*Opportunities\*?\*?\s*\|\s*[^|]*?~?([\d,]+)/i,
+    /(?:^|\n)\s*[-*•]\s*(?:annual\s*)?(?:piped\s*)?(?:pipeline\s*)?opportunit(?:y|ies)[:\s\-]+([\d,]+)/im,
+    /(?:annual\s*)?(?:piped\s*)?(?:pipeline\s*)?opportunit(?:y|ies)[:\s\-]+([\d,]+)/i,
+    /(?:annual\s*)?(?:piped\s*)?opptys?[:\s\-]+([\d,]+)/i,
+    /(?:pipeline|opportunities)[:\s\-]+([\d,]+)/i,
+    /([\d,]+)\s*(?:annual\s*)?(?:piped\s*)?opportunit/i,
+    /\*\*Annual\s*Piped\s*Opptys?\*\*[:\s]*~?([\d,]+)/i,
+  ];
+  for (const re of oppPatterns) {
+    const m = text.match(re);
+    if (m) {
+      const n = parseNumber(m[1]);
+      if (n > 0) {
+        out.opptys = clamp('opptys', n);
+        break;
+      }
+    }
   }
 
-  // Number of Sales Reps: "**~1,200**" in table
-  const repsMatch =
-    text.match(/\|\s*\*?\*?Number of Sales Reps?\*?\*?\s*\|\s*[^|]*?~?([\d,]+)/i) ??
-    text.match(/(?:sales\s*)?reps?[:\s]*([\d,]+)|([\d,]+)\s*reps?\b/i);
-  if (repsMatch) {
-    const n = parseNumber(repsMatch[1] || repsMatch[2] || '');
-    if (n > 0) out.reps = n;
+  // ----- Sales Reps -----
+  const repsPatterns = [
+    /\|\s*\*?\*?Number\s*of\s*Sales\s*Reps?\*?\*?\s*\|\s*[^|]*?~?([\d,]+)/i,
+    /\|\s*\*?\*?Sales\s*Reps?\*?\*?\s*\|\s*[^|]*?~?([\d,]+)/i,
+    /(?:^|\n)\s*[-*•]\s*(?:number\s*of\s*)?(?:sales\s*)?reps?[:\s\-]+([\d,]+)/im,
+    /(?:number\s*of\s*)?(?:sales\s*)?reps?[:\s\-]+([\d,]+)/i,
+    /([\d,]+)\s*(?:sales\s*)?reps?\b/i,
+    /\*\*Number\s*of\s*Sales\s*Reps?\*\*[:\s]*~?([\d,]+)/i,
+  ];
+  for (const re of repsPatterns) {
+    const m = text.match(re);
+    if (m) {
+      const n = parseNumber(m[1]);
+      if (n > 0) {
+        out.reps = clamp('reps', n);
+        break;
+      }
+    }
   }
 
-  // Sales Cycle Duration: "**155 Days**" in table
-  const cycleMatch =
-    text.match(/\|\s*\*?\*?Sales Cycle Duration\*?\*?\s*\|\s*[^|]*?(\d+)\s*Days?/i) ??
-    text.match(/(?:cycle|sales\s*cycle)[:\s]*(\d+)\s*days?|(\d+)\s*days?\s*(?:cycle|avg)/i) ??
-    text.match(/(\d+)\s*days?\s*cycle|cycle[:\s]*(\d+)/i);
-  if (cycleMatch) {
-    const n = parseNumber(cycleMatch[1] || cycleMatch[2] || '');
-    if (n > 0) out.cycle = n;
+  // ----- Sales Cycle (days) -----
+  const cyclePatterns = [
+    /\|\s*\*?\*?Sales\s*Cycle\s*Duration\*?\*?\s*\|\s*[^|]*?(\d+)\s*Days?/i,
+    /\|\s*\*?\*?Sales\s*Cycle\*?\*?\s*\|\s*[^|]*?(\d+)\s*Days?/i,
+    /(?:^|\n)\s*[-*•]\s*(?:sales\s*)?cycle\s*(?:duration)?[:\s\-]+(\d+)\s*days?/im,
+    /(?:sales\s*)?cycle\s*(?:duration)?[:\s\-]+(\d+)\s*days?/i,
+    /(?:sales\s*)?cycle[:\s\-]+(\d+)/i,
+    /(\d+)\s*days?\s*(?:sales\s*)?cycle/i,
+    /cycle[:\s\-]+(\d+)\s*days?/i,
+    /\*\*Sales\s*Cycle\s*Duration\*\*[:\s]*(\d+)\s*Days?/i,
+  ];
+  for (const re of cyclePatterns) {
+    const m = text.match(re);
+    if (m) {
+      const n = parseNumber(m[1]);
+      if (n > 0) {
+        out.cycle = clamp('cycle', n);
+        break;
+      }
+    }
   }
 
-  // Cost per rep (optional in one-pager; keep for other docs)
-  const costMatch = text.match(/cost\s*per\s*rep[:\s]*\$?([\d,]+)|(?:per\s*rep\s*)?cost[:\s]*\$?([\d,]+)/i);
-  if (costMatch) {
-    const n = parseNumber(costMatch[1] || costMatch[2] || '');
-    if (n > 0) out.costPerRep = n;
+  // ----- Cost per rep -----
+  const costPatterns = [
+    /cost\s*per\s*rep[:\s\-]+\$?([\d,]+)/i,
+    /(?:per\s*rep\s*)?cost[:\s\-]+\$?([\d,]+)/i,
+    /(?:fully\s*loaded\s*)?cost\s*per\s*rep[:\s\-]+\$?([\d,]+)/i,
+  ];
+  for (const re of costPatterns) {
+    const m = text.match(re);
+    if (m) {
+      const n = parseNumber(m[1]);
+      if (n > 0) {
+        out.costPerRep = clamp('costPerRep', n);
+        break;
+      }
+    }
   }
 
-  // Company / scenario: "Nike Wholesale ROI Model", "Apple Enterprise ROI Model", "model for Apple"
-  const nameMatch =
-    text.match(/([A-Za-z]+)\s+(?:Wholesale|Enterprise|Strategic|B2B|DTC)\s+ROI\s+Model/i) ??
-    text.match(/(?:general\s+)?(?:enterprise\s+)?model\s+for\s+([A-Za-z]+)/i) ??
-    text.match(/([A-Za-z]+)\s+Enterprise\s+ROI\s+Model/i) ??
-    text.match(/(?:company|scenario|model)[:\s]*([^\n.,]+)/i);
-  if (nameMatch && nameMatch[1]) {
-    let name = nameMatch[1].trim().replace(/\*\*/g, '');
-    if (text.match(/\s+Wholesale\s+ROI/i)) name += ' Wholesale';
-    else if (text.match(/\s+Enterprise\s+ROI/i) && !name.toLowerCase().includes('enterprise')) name += ' Enterprise';
-    if (name.length > 0) out.companyName = name.slice(0, 80);
+  // ----- Company / scenario name (Gemini often uses "X ROI Model" or "Model for X") -----
+  const namePatterns = [
+    /([A-Za-z0-9&\s]+)\s+(?:Wholesale|Enterprise|Strategic|B2B|DTC)\s+ROI\s+Model/i,
+    /(?:general\s+)?(?:enterprise\s+)?model\s+for\s+([A-Za-z0-9&\s]+)/i,
+    /([A-Za-z0-9&\s]+)\s+Enterprise\s+ROI\s+Model/i,
+    /(?:company|scenario|client|organization)[:\s]+([^\n.,]+)/i,
+    /(?:company|scenario|model)[:\s]*([^\n.,]+)/i,
+  ];
+  for (const re of namePatterns) {
+    const nameMatch = text.match(re);
+    if (nameMatch?.[1]) {
+      let name = nameMatch[1].trim().replace(/\*\*/g, '').slice(0, 80);
+      if (name.length > 0) {
+        if (text.match(/\s+Wholesale\s+ROI/i)) name += ' Wholesale';
+        else if (text.match(/\s+Enterprise\s+ROI/i) && !name.toLowerCase().includes('enterprise')) name += ' Enterprise';
+        out.companyName = name;
+        break;
+      }
+    }
   }
 
   return out;
